@@ -9,21 +9,21 @@ here = path.abspath(path.dirname(__file__))
 with open('README.rst') as f:
     long_description = f.read()
 
-setup(name='dictmysql',
+setup(name='kanimysql',
 
-      version='0.6.8',
+      version='0.0.1',
 
       description='A MySQL class for more convenient database manipulations with Python dictionary.',
 
       long_description=long_description,
 
-      author='Guangyang Li',
+      author='Kirin Fx',
 
-      author_email='mail@guangyangli.com',
+      author_email='ono.kirin@gmail.com',
 
       license='MIT',
 
-      py_modules=['dictmysql'],
+      py_modules=['kanimysql'],
 
       classifiers=[
           'Development Status :: 5 - Production/Stable',
@@ -42,7 +42,7 @@ setup(name='dictmysql',
 
       keywords='python mysql class',
 
-      url='https://ligyxy.github.io/DictMySQL/',
+      url='https://ligyxy.github.io/kanimysql/',
 
       install_requires=["PyMySQL>=0.7"],
       )

@@ -6,9 +6,11 @@ import pymysql
 import re
 import itertools
 from itertools import chain
+from attrdict import AttrDict
 
 err = pymysql.err
 cursors = pymysql.cursors
+pymysql.cursors.DictCursor.dict_type = AttrDict
 
 def count(column):
     return '#COUNT(`%s`)'%(column)
@@ -16,7 +18,7 @@ def count(column):
 def sum(column):
     return '#SUM(`%s`)'%(column)
 
-class DictMySQL:
+class KaniMySQL:
     def __init__(self, host, user, passwd, db=None, port=3306, charset='utf8', init_command='SET NAMES UTF8',
                  cursorclass=cursors.Cursor, use_unicode=True, autocommit=False):
         self.host = host
@@ -289,11 +291,12 @@ class DictMySQL:
         else:
             return ''
 
-    def _yield_result(self):
+    def _yield_result(self, table):
         while True:
             result = self.cur.fetchone()
             if not result:
                 break
+            result._setattr('_table_name',  table)
             yield result
 
     @staticmethod
@@ -355,9 +358,14 @@ class DictMySQL:
             return self.cur
 
         if iterator:
-            return self._yield_result()
+            return self._yield_result(table)
+        
+        selected = self.cur.fetchall()
+        
+        for row in selected:
+            row._setattr('_table_name',  table)
 
-        return self.cur.fetchall()
+        return selected
 
     def select_page(self, limit, offset=0, **kwargs):
         """
