@@ -24,7 +24,7 @@ class KaniCursor(DictCursor):
     def _conv_row(self, row):
         if row is None:
             return None
-        table_name = self._result.description
+        table_name = self._result.fields[0].table_name
         if table_name in self.table_dict_list:
             table_dict = self.table_dict_list[table_name]
             return table_dict(zip(self._fields, row))

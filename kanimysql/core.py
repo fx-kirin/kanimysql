@@ -6,12 +6,24 @@ import pymysql
 import re
 import itertools
 import string_utils
+import six
 from pymysql.constants import FIELD_TYPE
+from builtins import str
 try:
     import numpy as np
     NUMPY_SUPPORT = True
 except:
     NUMPY_SUPPORT = False
+try:
+    import pandas as pd
+    PANDAS_SUPPORT = True
+except:
+    PANDAS_SUPPORT = False
+try:
+    import freezegun
+    FREEZEGUN_SUPPORT = True
+except:
+    FREEZEGUN_SUPPORT = False
 from itertools import chain
 from attrdict import AttrDict
 from funcy import project
@@ -27,7 +39,8 @@ def __getattr__(self, key):
 def __setattr__(self, key, value):
     if key != 'id':
         if key not in self:
-            raise KeyError("{} is not a legal key of this TableDict".format(repr(key)))
+            raise KeyError("{} is not a legal colum name of this class:'{}'".format(repr(key), self.__class__.__name__))
+    self._setattr('_is_modified', True)
     return super(AttrDict, self).__setitem__(key, value)
 
 def __init__(self, *args, **kwargs):
@@ -43,10 +56,13 @@ def TableDict(table_name, conn=None):
         replace_dict['__init__'] = __init__
         replace_dict['__setattr__'] = __setattr__
         replace_dict['columns'] = columns
+        replace_dict['_is_modified'] = False
     if isinstance(table_name, str):
         table_class_name = string_utils.snake_case_to_camel(table_name)
     else:
         table_class_name = 'TableDict'
+    if six.PY2:
+        table_class_name = bytes(table_name)
     return type(table_class_name, (AttrDict,), replace_dict)
 
 from .cursor import KaniCursor
@@ -75,6 +91,11 @@ class KaniMySQL:
         self.connection.decoders[FIELD_TYPE.NEWDECIMAL] = int
         if NUMPY_SUPPORT:
             self.connection.encoders[np.float64] = pymysql.converters.escape_float
+            self.connection.encoders[np.int64] = pymysql.converters.escape_int
+        if PANDAS_SUPPORT:
+            self.connection.encoders[pd.Timestamp] = pymysql.converters.escape_datetime
+        if FREEZEGUN_SUPPORT:
+            self.connection.encoders[freezegun.api.FakeDatetime] = pymysql.converters.escape_datetime
         
         self.cursor = self.cur = self.conn.cursor()
         self.debug = False
@@ -417,8 +438,6 @@ class KaniMySQL:
         
         if first:
             selected = self.cur.fetchone()
-            if selected:
-                selected._setattr('_table_name',  table)
             if is_columns_selected:
                 selected = [selected[re.sub('^#', '', column)] for column in columns]
         else:
@@ -427,7 +446,7 @@ class KaniMySQL:
                 selected = [tuple(row[re.sub('^#', '', column)] for column in columns) for row in selected]
             else:
                 for row in selected:
-                    row._setattr('_table_name',  table)
+                    row._setattr('_is_modified',  False)
                 
         return selected
 
@@ -475,7 +494,7 @@ class KaniMySQL:
         result = select_result[0] if select_result else None
 
         if result:
-            return result[0 if self.cursorclass is pymysql.cursors.Cursor else column]
+            return result[0]
 
         if ifnone:
             raise ValueError(ifnone)
@@ -508,6 +527,8 @@ class KaniMySQL:
         self.cur.execute(_sql, _args)
         if commit:
             self.conn.commit()
+        value.id = self.cur.lastrowid
+        
         return self.cur.lastrowid
 
     def upsert(self, value, update_columns=None, commit=True):
@@ -629,8 +650,12 @@ class KaniMySQL:
             if not isinstance(table, str):
                 table = table._table_name
         else:
+            if not value._is_modified:
+                return -1 # Not modified
             table = value._table_name
             if where is None:
+                if value.id is None:
+                    raise ValueError('id value must be set on updating.')
                 where = {'id':value.id}
         
         if columns:
@@ -652,6 +677,9 @@ class KaniMySQL:
         result = self.cur.execute(_sql, _args)
         if commit:
             self.commit()
+            
+        if isinstance(value, AttrDict):
+            value._setattr('_is_modified',  False)
         return result
 
     def delete(self, value=None, where=None, table=None, commit=True):

@@ -18,3 +18,6 @@ def sum(column):
 
 def desc(column):
     return '#`%s` DESC'%(column)
+
+def escape(query):
+    return '#%s'%(query)
