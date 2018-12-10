@@ -18,8 +18,11 @@ class KaniCursor(DictCursor):
     dict_type = dict_type
     table_dict_list = {}
     # You can override this to use OrderedDict or other dict-like types.
-    def setup_table_dict(self, table_dict_list):
+    def setup_table_dict_list(self, table_dict_list):
         self.table_dict_list = table_dict_list
+        
+    def set_table_dict(self, table_name, table_dict):
+        self.table_dict_list[table_name] = table_dict
     
     def _conv_row(self, row):
         if row is None:
@@ -29,4 +32,6 @@ class KaniCursor(DictCursor):
             table_dict = self.table_dict_list[table_name]
             return table_dict(zip(self._fields, row))
         else:
-            return self.dict_type(zip(self._fields, row))
+            result = self.dict_type(zip(self._fields, row))
+            result._setattr('_table_name', table_name)
+            return result

@@ -72,7 +72,7 @@ cursors = pymysql.cursors
 
 class KaniMySQL:
     def __init__(self, host, user, passwd, db=None, port=3306, charset='utf8', init_command='SET NAMES UTF8',
-                 cursorclass=KaniCursor, use_unicode=True, autocommit=False):
+                 cursorclass=KaniCursor, use_unicode=True, autocommit=False, table_initialize=False, table_classes=None):
         self.host = host
         self.port = int(port)
         self.user = user
@@ -100,11 +100,16 @@ class KaniMySQL:
         self.cursor = self.cur = self.conn.cursor()
         self.debug = False
         
-        self.table_classes = {}
-        table_names = [table['table_name'] for table in self.table_name()]
-        for table_name in table_names:
-            self.table_classes[table_name] = TableDict(table_name, self)
-        self.cursor.setup_table_dict(self.table_classes)
+        if table_classes is None:
+            self.table_classes = {}
+            if table_initialize:
+                table_names = [table['table_name'] for table in self.table_name()]
+                for table_name in table_names:
+                    self.table_classes[table_name] = TableDict(table_name, self)
+                self.cursor.setup_table_dict_list(self.table_classes)
+        else:
+            self.table_classes = table_classes
+            self.cursor.setup_table_dict_list(self.table_classes)
 
     def reconnect(self):
         self.connection = self.conn = pymysql.connect(host=self.host, port=self.port, user=self.user,
@@ -565,7 +570,6 @@ class KaniMySQL:
     def insertmany(self, columns, value, ignore=False, commit=True):
         """
         Insert multiple records within one query.
-        :type table: string
         :type columns: list
         :type value: list|tuple
         :param value: Doesn't support MySQL functions
@@ -780,4 +784,8 @@ class KaniMySQL:
         self.conn.close()
         
     def get_table_class(self, table_name):
+        if not (table_name in self.table_classes):
+            table_class = TableDict(table_name, self)
+            self.table_classes[table_name] = table_class
+            self.cur.set_table_dict(table_name, table_class)
         return self.table_classes[table_name]
