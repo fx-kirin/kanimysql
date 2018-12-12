@@ -1,22 +1,22 @@
 #!/usr/bin/python
 # -*-coding: utf-8 -*-
 
-from setuptools import setup
+from setuptools import setup, find_packages
 from os import path
 
 here = path.abspath(path.dirname(__file__))
 
-with open('README.rst') as f:
+with open('README.md') as f:
     long_description = f.read()
 
 setup(name='kanimysql',
-      version='0.0.1',
+      version='0.0.4',
       description='A MySQL class for more convenient database manipulations with Python dictionary.',
       long_description=long_description,
       author='Kirin Fx',
       author_email='ono.kirin@gmail.com',
       license='MIT',
-      py_modules=['kanimysql'],
+        packages=find_packages(),
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Intended Audience :: Developers',

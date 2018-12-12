@@ -57,7 +57,7 @@ def TableDict(table_name, conn=None):
         replace_dict['__setattr__'] = __setattr__
         replace_dict['columns'] = columns
         replace_dict['_is_modified'] = False
-    if isinstance(table_name, str):
+    if isinstance(table_name, six.string_types):
         table_class_name = string_utils.snake_case_to_camel(table_name)
     else:
         table_class_name = 'TableDict'
@@ -376,7 +376,7 @@ class KaniMySQL:
         try:
             return isinstance(s, basestring)  # Python 2 string
         except NameError:
-            return isinstance(s, str)  # Python 3 string
+            return isinstance(s, six.string_types)  # Python 3 string
 
     def _by_columns(self, columns):
         """
@@ -403,7 +403,7 @@ class KaniMySQL:
                          SSCursor or SSDictCursor, no matter iterator is True or False.
         :type fetch: bool
         """
-        if not isinstance(table, str):
+        if not isinstance(table, six.string_types):
             table = table._table_name
             
         if first:
@@ -611,7 +611,7 @@ class KaniMySQL:
         :type table: string
         :type where: dict
         """
-        if not isinstance(table, str):
+        if not isinstance(table, six.string_types):
             table = table._table_name
 
         where_q, _where_args = self._where_parser(where)
@@ -633,7 +633,7 @@ class KaniMySQL:
         :type table: string
         :type where: dict
         """
-        if not isinstance(table, str):
+        if not isinstance(table, six.string_types):
             table = table._table_name
 
         result = self.count(table, where)
@@ -651,7 +651,7 @@ class KaniMySQL:
         :type commit: bool
         """
         if table is not None:
-            if not isinstance(table, str):
+            if not isinstance(table, six.string_types):
                 table = table._table_name
         else:
             if not value._is_modified:
@@ -695,7 +695,7 @@ class KaniMySQL:
         assert not((value is not None) and (table is not None))
         
         if table is not None:
-            if not isinstance(table, str):
+            if not isinstance(table, six.string_types):
                 table = table._table_name
         elif value is not None:
             table = value._table_name
@@ -719,7 +719,7 @@ class KaniMySQL:
         return result
 
     def column_name(self, table):
-        if not isinstance(table, str):
+        if not isinstance(table, six.string_types):
             table = table._table_name
         _sql = "SELECT `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA`=%s AND `TABLE_NAME`=%s;"
         _args = (self.db, table)
