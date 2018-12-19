@@ -10,14 +10,18 @@
 
 """
 
+
 def count(column):
-    return '#COUNT(`%s`)'%(column)
+    return '#COUNT(`%s`)' % (column)
+
 
 def sum(column):
-    return '#SUM(`%s`)'%(column)
+    return '#SUM(`%s`)' % (column)
+
 
 def desc(column):
-    return '#`%s` DESC'%(column)
+    return '#`%s` DESC' % (column)
+
 
 def escape(query):
-    return '#%s'%(query)
+    return '#%s' % (query)

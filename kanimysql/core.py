@@ -28,14 +28,17 @@ from itertools import chain
 from attrdict import AttrDict
 from funcy import project
 
+
 def __repr__(self,):
     return '<class \'%s\'> %s' % (self.__class__.__name__, self.items())
+
 
 def __getattr__(self, key):
     if key not in self:
         return None
     return super(AttrDict, self).__getattr__(key)
-    
+
+
 def __setattr__(self, key, value):
     if key != 'id':
         if key not in self:
@@ -43,11 +46,13 @@ def __setattr__(self, key, value):
     self._setattr('_is_modified', True)
     return super(AttrDict, self).__setitem__(key, value)
 
+
 def __init__(self, *args, **kwargs):
     for key in self.columns:
         if key != 'id':
             super(AttrDict, self).__setitem__(key, None)
     AttrDict.__init__(self, *args, **kwargs)
+
 
 def TableDict(table_name, conn=None):
     replace_dict = {'_table_name': table_name, '__repr__': __repr__, '__getattr__': __getattr__}
@@ -65,10 +70,12 @@ def TableDict(table_name, conn=None):
         table_class_name = bytes(table_name)
     return type(table_class_name, (AttrDict,), replace_dict)
 
+
 from .cursor import KaniCursor
 
 err = pymysql.err
 cursors = pymysql.cursors
+
 
 class KaniMySQL:
     def __init__(self, host, user, passwd, db=None, port=3306, charset='utf8', init_command='SET NAMES UTF8',
@@ -96,10 +103,10 @@ class KaniMySQL:
             self.connection.encoders[pd.Timestamp] = pymysql.converters.escape_datetime
         if FREEZEGUN_SUPPORT:
             self.connection.encoders[freezegun.api.FakeDatetime] = pymysql.converters.escape_datetime
-        
+
         self.cursor = self.cur = self.conn.cursor()
         self.debug = False
-        
+
         if table_classes is None:
             self.table_classes = {}
             if table_initialize:
@@ -156,7 +163,7 @@ class KaniMySQL:
         return ''.join((' ' if p else '', s, ' ' if n else ''))
 
     def _tablename_parser(self, table):
-        result = re.match('^(\[(|>|<|<>|><)\])??(\w+)(\((|\w+)\))??$', table.replace(' ', ''))
+        result = re.match(r'^(\[(|>|<|<>|><)\])??(\w+)(\((|\w+)\))??$', table.replace(' ', ''))
         join_type = ''
         alias = ''
         formatted_tablename = self._backtick(table)
@@ -325,11 +332,11 @@ class KaniMySQL:
                             result['q'].append(_get_connector(connector, is_not=_not, whitespace=True))
                         l_index += 1
                 elif _operator in ['=', 'IN'] or not _operator:
-                    s_q = self._backtick(upper_key) + (' NOT' if _not else '') + ' IN (' + ', '.join(['%s']*len(_cond)) + ')'
+                    s_q = self._backtick(upper_key) + (' NOT' if _not else '') + ' IN (' + ', '.join(['%s'] * len(_cond)) + ')'
                     result['q'].append('(' + s_q + ')')
                     result['v'] += tuple(_cond)
                 elif _operator == 'BETWEEN':
-                    s_q = self._backtick(upper_key) + (' NOT' if _not else '') + ' BETWEEN ' + ' AND '.join(['%s']*len(_cond))
+                    s_q = self._backtick(upper_key) + (' NOT' if _not else '') + ' BETWEEN ' + ' AND '.join(['%s'] * len(_cond))
                     result['q'].append('(' + s_q + ')')
                     result['v'] += tuple(_cond)
                 elif _operator == 'LIKE':
@@ -368,7 +375,7 @@ class KaniMySQL:
             result = self.cur.fetchone()
             if not result:
                 break
-            result._setattr('_table_name',  table)
+            result._setattr('_table_name', table)
             yield result
 
     @staticmethod
@@ -405,15 +412,15 @@ class KaniMySQL:
         """
         if not isinstance(table, six.string_types):
             table = table._table_name
-            
+
         if first:
             limit = 1
-        
+
         is_columns_selected = True
         if not columns:
             columns = ['*']
             is_columns_selected = False
-        
+
         where_q, _args = self._where_parser(where)
 
         # TODO: support multiple table
@@ -440,7 +447,7 @@ class KaniMySQL:
 
         if iterator:
             return self._yield_result(table)
-        
+
         if first:
             selected = self.cur.fetchone()
             if is_columns_selected:
@@ -451,8 +458,8 @@ class KaniMySQL:
                 selected = [tuple(row[re.sub('^#', '', column)] for column in columns) for row in selected]
             else:
                 for row in selected:
-                    row._setattr('_is_modified',  False)
-                
+                    row._setattr('_is_modified', False)
+
         return selected
 
     def select_page(self, limit, offset=0, **kwargs):
@@ -490,7 +497,7 @@ class KaniMySQL:
         """
         if isinstance(table, AttrDict):
             table = table._table_name
-            
+
         select_result = self.select(table=table, columns=[column], join=join, where=where, limit=1)
 
         if self.debug:
@@ -521,7 +528,7 @@ class KaniMySQL:
         :return: int. The row id of the insert.
         """
         table = value._table_name
-        
+
         value_q, _args = self._value_parser(value, columnname=False)
         _sql = ''.join(['INSERT', ' IGNORE' if ignore else '', ' INTO ', self._backtick(table),
                         ' (', self._backtick_columns(value), ') VALUES (', value_q, ');'])
@@ -533,7 +540,7 @@ class KaniMySQL:
         if commit:
             self.conn.commit()
         value.id = self.cur.lastrowid
-        
+
         return self.cur.lastrowid
 
     def upsert(self, value, update_columns=None, commit=True):
@@ -549,7 +556,7 @@ class KaniMySQL:
 
         if not update_columns:
             update_columns = value.keys()
-            
+
         table = value._table_name
 
         value_q, _args = self._value_parser(value, columnname=False)
@@ -557,7 +564,7 @@ class KaniMySQL:
         _sql = ''.join(['INSERT INTO ', self._backtick(table), ' (', self._backtick_columns(value), ') VALUES ',
                         '(', value_q, ') ',
                         'ON DUPLICATE KEY UPDATE ',
-                        ', '.join(['='.join([k, 'VALUES('+k+')']) for k in update_columns]), ';'])
+                        ', '.join(['='.join([k, 'VALUES(' + k + ')']) for k in update_columns]), ';'])
 
         if self.debug:
             return self.cur.mogrify(_sql, _args)
@@ -580,7 +587,7 @@ class KaniMySQL:
         """
         if not isinstance(value, (list, tuple)):
             raise TypeError('Input value should be a list or tuple')
-        
+
         if isinstance(value, AttrDict):
             table = value._table_name
 
@@ -604,7 +611,7 @@ class KaniMySQL:
         if commit:
             self.conn.commit()
         return self.cur.lastrowid
-    
+
     def count(self, table, where=None):
         """
         Count matched rows.
@@ -624,9 +631,9 @@ class KaniMySQL:
             return self.cur.mogrify(_sql, _args)
 
         result = self.cur.execute(_sql, _args)
-        
+
         return self.fetchall()[0]['COUNT(*)']
-    
+
     def exists(self, table, where=None):
         """
         Check matched row existance.
@@ -655,13 +662,13 @@ class KaniMySQL:
                 table = table._table_name
         else:
             if not value._is_modified:
-                return -1 # Not modified
+                return -1  # Not modified
             table = value._table_name
             if where is None:
                 if value.id is None:
                     raise ValueError('id value must be set on updating.')
-                where = {'id':value.id}
-        
+                where = {'id': value.id}
+
         if columns:
             assert isinstance(columns, (tuple, list))
             value = dict((column, value[column]) for column in columns)
@@ -681,9 +688,9 @@ class KaniMySQL:
         result = self.cur.execute(_sql, _args)
         if commit:
             self.commit()
-            
+
         if isinstance(value, AttrDict):
-            value._setattr('_is_modified',  False)
+            value._setattr('_is_modified', False)
         return result
 
     def delete(self, value=None, where=None, table=None, commit=True):
@@ -693,15 +700,15 @@ class KaniMySQL:
         :type commit: bool
         """
         assert not((value is not None) and (table is not None))
-        
+
         if table is not None:
             if not isinstance(table, six.string_types):
                 table = table._table_name
         elif value is not None:
             table = value._table_name
             if where is None:
-                where = {'id':value.id}
-            
+                where = {'id': value.id}
+
         where_q, _args = self._where_parser(where)
 
         alias = self._tablename_parser(table)['alias']
@@ -741,7 +748,7 @@ class KaniMySQL:
 
         self.cur.execute(query)
         return self.cur.fetchone()[0 if self.cursorclass is pymysql.cursors.Cursor else 'now'].strftime(
-                "%Y-%m-%d %H:%M:%S")
+            "%Y-%m-%d %H:%M:%S")
 
     def last_insert_id(self):
         query = "SELECT LAST_INSERT_ID() AS lid;"
@@ -782,7 +789,7 @@ class KaniMySQL:
     def close(self):
         self.cur.close()
         self.conn.close()
-        
+
     def get_table_class(self, table_name):
         if not (table_name in self.table_classes):
             table_class = TableDict(table_name, self)

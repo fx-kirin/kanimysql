@@ -14,16 +14,19 @@ from pymysql.cursors import DictCursor
 from .core import TableDict
 
 dict_type = TableDict(None)
+
+
 class KaniCursor(DictCursor):
     dict_type = dict_type
     table_dict_list = {}
     # You can override this to use OrderedDict or other dict-like types.
+
     def setup_table_dict_list(self, table_dict_list):
         self.table_dict_list = table_dict_list
-        
+
     def set_table_dict(self, table_name, table_dict):
         self.table_dict_list[table_name] = table_dict
-    
+
     def _conv_row(self, row):
         if row is None:
             return None
