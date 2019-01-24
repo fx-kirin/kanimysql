@@ -1,0 +1,11 @@
+numpy
+freezegun
+setuptools
+attrdict
+python_string_utils
+PyMySQL
+pandas
+funcy
+six
+pytest
+PyYAML

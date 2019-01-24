@@ -71,6 +71,29 @@ def TableDict(table_name, conn=None):
     return type(table_class_name, (AttrDict,), replace_dict)
 
 
+def to_dict(instances):
+    pickled = []
+    for instance in instances:
+        data = dict(instance)
+        data['table_name'] = instance._table_name
+        pickled.append(data)
+    return pickled
+
+
+def from_dict(dict_array, conn=None):
+    instances = []
+    for data in dict_array:
+        if conn is None:
+            instance = TableDict(data['table_name'])()
+        else:
+            instance = conn.get_table_class(data['table_name'])()
+        del data['table_name']
+        for key, value in data.items():
+            instance[key] = value
+        instances.append(instance)
+    return instances
+
+
 from .cursor import KaniCursor
 
 err = pymysql.err
@@ -660,7 +683,7 @@ class KaniMySQL:
         if table is not None:
             if not isinstance(table, six.string_types):
                 table = table._table_name
-        else:
+        elif isinstance(value, AttrDict):
             if not value._is_modified:
                 return -1  # Not modified
             table = value._table_name
