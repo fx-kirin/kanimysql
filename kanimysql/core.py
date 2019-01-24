@@ -683,7 +683,7 @@ class KaniMySQL:
         if table is not None:
             if not isinstance(table, six.string_types):
                 table = table._table_name
-        elif isinstance(value, AttrDict):
+        else:
             if not value._is_modified:
                 return -1  # Not modified
             table = value._table_name
