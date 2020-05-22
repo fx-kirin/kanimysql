@@ -33,7 +33,7 @@ def __repr__(self,):
     return '<class \'%s\'> %s' % (self.__class__.__name__, self.items())
 
 
-def __getattr__(self, key):
+def __custom_getattr__(self, key):
     if key not in self:
         return None
     return super(AttrDict, self).__getattr__(key)
@@ -55,7 +55,7 @@ def __init__(self, *args, **kwargs):
 
 
 def TableDict(table_name, conn=None):
-    replace_dict = {'_table_name': table_name, '__repr__': __repr__, '__getattr__': __getattr__}
+    replace_dict = {'_table_name': table_name, '__repr__': __repr__, '__getattr__': __custom_getattr__}
     if conn:
         columns = [list(column_name.values())[0] for column_name in conn.column_name(table_name)]
         replace_dict['__init__'] = __init__
