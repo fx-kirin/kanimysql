@@ -1,11 +1,10 @@
-numpy
-freezegun
-setuptools
 attrdict
-python_string_utils
-PyMySQL
-pandas
+freezegun
 funcy
-six
+numpy
+pandas
+PyMySQL
 pytest
+python_string_utils
 PyYAML
+six
