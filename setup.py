@@ -10,7 +10,7 @@ with open('README.md') as f:
     long_description = f.read()
 
 setup(name='kanimysql',
-      version='0.1.0',
+      version='0.1.1',
       description='A MySQL class for more convenient database manipulations with Python dictionary.',
       long_description=long_description,
       author='Kirin Fx',
@@ -33,5 +33,5 @@ setup(name='kanimysql',
       ],
       keywords='python mysql class',
       url='https://github.com/fx-kirin/kanimysql',
-      install_requires=["PyMySQL>=0.7"],
+      install_requires=["PyMySQL>=0.7", "python-string-utils", "interval_decorator"],
       )
