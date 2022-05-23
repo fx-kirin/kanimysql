@@ -2,28 +2,13 @@
 # -*-coding: utf-8 -*-
 
 from __future__ import print_function
-
-import re
-from builtins import str
-from collections import UserDict
-
 import pymysql
-import six
+import re
+import itertools
 import string_utils
+import six
 from pymysql.constants import FIELD_TYPE
-from pymysql.cursors import DictCursor
-
-
-def __repr__(self,):
-    return '<class \'%s\'> %s' % (self.__class__.__name__, self.items())
-
-
-def __custom_getattr__(self, key):
-    if key not in self:
-        return None
-    return super(AttrDict, self).__getattr__(key)
-
-
+from builtins import str
 try:
     import numpy as np
     NUMPY_SUPPORT = True
@@ -39,27 +24,34 @@ try:
     FREEZEGUN_SUPPORT = True
 except:
     FREEZEGUN_SUPPORT = False
+from itertools import chain
+from kaniattrdict import AttrDict
+from funcy import project
 
 
-class AttrDict(UserDict):
-    def __init__(self, contents=None, **kwargs):
-        super().__init__(contents)
-        if type(contents) == dict:
-            self.data = {
-                key: AttrDict(value) if type(value) == dict else value
-                for key, value in self.data.items()}
-        self.data.update(kwargs)
+def __repr__(self,):
+    return '<class \'%s\'> %s' % (self.__class__.__name__, self.items())
 
-    def __getattribute__(self, key):
-        try:
-            return object.__getattribute__(self, key)
-        except AttributeError:
-            data = object.__getattribute__(self, "data")
 
-            if key not in data:
-                raise AttributeError
-            else:
-                return data[key]
+def __custom_getattr__(self, key):
+    if key not in self:
+        return None
+    return super(AttrDict, self).__getattr__(key)
+
+
+def __setattr__(self, key, value):
+    if key != 'id':
+        if key not in self:
+            raise KeyError("{} is not a legal colum name of this class:'{}'".format(repr(key), self.__class__.__name__))
+    self._setattr('_is_modified', True)
+    return super(AttrDict, self).__setitem__(key, value)
+
+
+def __init__(self, *args, **kwargs):
+    for key in self.columns:
+        if key != 'id':
+            super(AttrDict, self).__setitem__(key, None)
+    AttrDict.__init__(self, *args, **kwargs)
 
 
 def TableDict(table_name, conn=None):
@@ -77,48 +69,6 @@ def TableDict(table_name, conn=None):
     if six.PY2:
         table_class_name = bytes(table_name)
     return type(table_class_name, (AttrDict,), replace_dict)
-
-
-dict_type = TableDict(None)
-
-
-class KaniCursor(DictCursor):
-    dict_type = dict_type
-    table_dict_list = {}
-    # You can override this to use OrderedDict or other dict-like types.
-
-    def setup_table_dict_list(self, table_dict_list):
-        self.table_dict_list = table_dict_list
-
-    def set_table_dict(self, table_name, table_dict):
-        self.table_dict_list[table_name] = table_dict
-
-    def _conv_row(self, row):
-        if row is None:
-            return None
-        table_name = self._result.fields[0].table_name
-        if table_name in self.table_dict_list:
-            table_dict = self.table_dict_list[table_name]
-            return table_dict(zip(self._fields, row))
-        else:
-            result = self.dict_type(zip(self._fields, row))
-            result._setattr('_table_name', table_name)
-            return result
-
-
-def __setattr__(self, key, value):
-    if key != 'id':
-        if key not in self:
-            raise KeyError("{} is not a legal colum name of this class:'{}'".format(repr(key), self.__class__.__name__))
-    self._setattr('_is_modified', True)
-    return super(AttrDict, self).__setitem__(key, value)
-
-
-def __init__(self, *args, **kwargs):
-    for key in self.columns:
-        if key != 'id':
-            super(AttrDict, self).__setitem__(key, None)
-    AttrDict.__init__(self, *args, **kwargs)
 
 
 def to_dict(instances):
@@ -143,6 +93,8 @@ def from_dict(dict_array, conn=None):
         instances.append(instance)
     return instances
 
+
+from .cursor import KaniCursor
 
 err = pymysql.err
 cursors = pymysql.cursors
