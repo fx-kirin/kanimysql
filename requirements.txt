@@ -1,0 +1,10 @@
+attrdict
+freezegun
+funcy
+numpy
+pandas
+PyMySQL
+pytest
+python_string_utils
+PyYAML
+six
