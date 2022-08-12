@@ -693,7 +693,7 @@ class KaniMySQL:
                 where = {'id': value.id}
 
         if columns:
-            assert isinstance(columns, (tuple, list))
+            assert isinstance(columns, (tuple, list, set))
             value = dict((column, value[column]) for column in columns)
 
         value_q, _value_args = self._value_parser(value, columnname=True)

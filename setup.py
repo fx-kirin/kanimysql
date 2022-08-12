@@ -10,7 +10,7 @@ with open('README.md') as f:
     long_description = f.read()
 
 setup(name='kanimysql',
-      version='0.3.0',
+      version='0.3.1',
       description='A MySQL class for more convenient database manipulations with Python dictionary.',
       long_description=long_description,
       author='Kirin Fx',
