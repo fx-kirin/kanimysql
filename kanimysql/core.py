@@ -133,7 +133,7 @@ class KaniMySQL:
         if table_classes is None:
             self.table_classes = {}
             if table_initialize:
-                table_names = [table['table_name'] for table in self.table_name()]
+                table_names = [table['TABLE_NAME'] for table in self.table_name()]
                 for table_name in table_names:
                     self.table_classes[table_name] = TableDict(table_name, self)
                 self.cursor.setup_table_dict_list(self.table_classes)
