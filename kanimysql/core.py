@@ -9,6 +9,7 @@ import string_utils
 import six
 from pymysql.constants import FIELD_TYPE
 from builtins import str
+from decimal import Decimal
 try:
     import numpy as np
     NUMPY_SUPPORT = True
@@ -117,8 +118,8 @@ class KaniMySQL:
                                                       passwd=self.passwd, db=self.db, charset=charset,
                                                       init_command=init_command, cursorclass=self.cursorclass,
                                                       use_unicode=self.use_unicode, autocommit=self.autocommit_mode)
-        self.connection.decoders[FIELD_TYPE.DECIMAL] = int
-        self.connection.decoders[FIELD_TYPE.NEWDECIMAL] = int
+        self.connection.decoders[FIELD_TYPE.DECIMAL] = Decimal
+        self.connection.decoders[FIELD_TYPE.NEWDECIMAL] = Decimal
         if NUMPY_SUPPORT:
             self.connection.encoders[np.float64] = pymysql.converters.escape_float
             self.connection.encoders[np.int64] = pymysql.converters.escape_int
